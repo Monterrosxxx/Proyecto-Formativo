@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="321dp"
+        android:layout_height="334dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.503"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.499"
+        app:srcCompat="@drawable/img1" />
+
+    <ImageView
+        android:id="@+id/imgApliMedicamentos"
+        android:layout_width="146dp"
+        android:layout_height="137dp"
+        app:srcCompat="@drawable/img2"
+        tools:layout_editor_absoluteX="64dp"
+        tools:layout_editor_absoluteY="96dp" />
+
+    <ImageView
+        android:id="@+id/imgMedicamentos"
+        android:layout_width="146dp"
+        android:layout_height="137dp"
+        app:srcCompat="@drawable/img3"
+        tools:layout_editor_absoluteX="239dp"
+        tools:layout_editor_absoluteY="96dp" />
+
+    <ImageView
+        android:id="@+id/imgPacientes"
+        android:layout_width="146dp"
+        android:layout_height="137dp"
+        app:srcCompat="@drawable/img4"
+        tools:layout_editor_absoluteX="151dp"
+        tools:layout_editor_absoluteY="741dp" />
+
+    <TextView
+        android:id="@+id/txtAplicacionMedicamientos"
+        android:layout_width="160dp"
+        android:layout_height="54dp"
+        android:text="Aplicación de medicamientos"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:layout_editor_absoluteX="64dp"
+        tools:layout_editor_absoluteY="243dp" />
+
+    <TextView
+        android:id="@+id/txtMedicamentos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Medicamentos"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:layout_editor_absoluteX="251dp"
+        tools:layout_editor_absoluteY="252dp" />
+
+    <TextView
+        android:id="@+id/txtPaciente"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pacientes"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:layout_editor_absoluteX="180dp"
+        tools:layout_editor_absoluteY="891dp" />
+</androidx.constraintlayout.widget.ConstraintLayout>
