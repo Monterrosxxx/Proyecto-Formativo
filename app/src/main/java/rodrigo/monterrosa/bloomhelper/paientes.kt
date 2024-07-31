@@ -13,17 +13,25 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.ReportFragment.Companion.reportFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.sql.Connection
+import java.sql.SQLException
 import java.util.UUID
 
 class paientes : AppCompatActivity() {
+    private lateinit var rcvPacientes: RecyclerView
+    private lateinit var txtnombrePaciente: EditText
+    private lateinit var txtapellidoPaciente: EditText
+    private lateinit var txtEdad: EditText
+    private lateinit var txtEnfermedad: EditText
+    private lateinit var txtnumeroHabitacion: EditText
+    private lateinit var txtnumeroCama: EditText
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,86 +42,141 @@ class paientes : AppCompatActivity() {
             insets
         }
 
-        val txtnombrePaciente = findViewById<EditText>(R.id.txtnombrePaciente)
-        val txtapellidoPaciente = findViewById<EditText>(R.id.txtapellidoPaciente)
-        val txtEdad = findViewById<EditText>(R.id.txtEdad)
-        val txtEnfermedad = findViewById<EditText>(R.id.txtEnfermedad)
-        val txtnumeroHabitacion = findViewById<EditText>(R.id.txtnumeroHabitacion)
-        val txtnumeroCama = findViewById<EditText>(R.id.txtnumeroCama)
-        val btnAgregar = findViewById<Button>(R.id.btnAgregar)
-        val imgRegresar = findViewById<ImageView>(R.id.imgRegresar)
-        val rcvPacientes = findViewById<RecyclerView>(R.id.rcvPacientes)
+        initializeViews()
+        setupRecyclerView()
+        loadPacientes()
+        setupListeners()
+    }
 
+    private fun initializeViews() {
+        txtnombrePaciente = findViewById(R.id.txtnombrePaciente)
+        txtapellidoPaciente = findViewById(R.id.txtapellidoPaciente)
+        txtEdad = findViewById(R.id.txtEdad)
+        txtEnfermedad = findViewById(R.id.txtEnfermedad)
+        txtnumeroHabitacion = findViewById(R.id.txtnumeroHabitacion)
+        txtnumeroCama = findViewById(R.id.txtnumeroCama)
+        rcvPacientes = findViewById(R.id.rcvPacientes)
+    }
+
+    private fun setupRecyclerView() {
         rcvPacientes.layoutManager = LinearLayoutManager(this)
+    }
 
-        fun obtenerPacientes():List<paciente>{
-            val objConexion = claseConexion().cadenaConexion()
-            val statement = objConexion?.createStatement()
-            val resultSet = statement?.executeQuery("SELECT * FROM paciente")!!
-
-            val listaPacientes = mutableListOf<paciente>()
-            while (resultSet.next() == true) {
-
-                val uuidPaciente = resultSet.getString("UUID_paciente")
-                val nombre = resultSet.getString("nombre")
-                val apellidos = resultSet.getString("apellidos")
-                val edad = resultSet.getInt("edad")
-                val enfermedad = resultSet.getString("enfermedad")
-                val numero_habitacion = resultSet.getInt("numero_habitacion")
-                val numero_cama = resultSet.getInt("numero_cama")
-
-                val valoresJuntos = paciente(uuidPaciente, nombre, apellidos, edad, enfermedad, numero_habitacion, numero_cama)
-                listaPacientes.add(valoresJuntos)
+    private fun loadPacientes() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val pacientesDB = obtenerPacientes()
+                withContext(Dispatchers.Main) {
+                    val adaptador = Adaptador(pacientesDB)
+                    rcvPacientes.adapter = adaptador
+                }
+            } catch (e: SQLException) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@paientes, "Error al cargar pacientes: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
+        }
+    }
 
-            return listaPacientes
+    private fun setupListeners() {
+        findViewById<Button>(R.id.btnAgregar).setOnClickListener { agregarPaciente() }
+        findViewById<ImageView>(R.id.imgRegresar).setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+        }
+    }
 
+    private fun obtenerPacientes(): List<paciente> {
+        val listaPacientes = mutableListOf<paciente>()
+        var connection: Connection? = null
+        try {
+            connection = claseConexion().cadenaConexion()
+            connection?.createStatement()?.use { statement ->
+                statement.executeQuery("SELECT * FROM paciente").use { resultSet ->
+                    while (resultSet.next()) {
+                        listaPacientes.add(
+                            paciente(
+                                resultSet.getString("UUID_paciente"),
+                                resultSet.getString("nombre"),
+                                resultSet.getString("apellidos"),
+                                resultSet.getInt("edad"),
+                                resultSet.getString("enfermedad"),
+                                resultSet.getInt("numero_habitacion"),
+                                resultSet.getInt("numero_cama")
+                            )
+                        )
+                    }
+                }
+            }
+        } catch (e: SQLException) {
+            e.printStackTrace()
+            throw e
+        } finally {
+            connection?.close()
+        }
+        return listaPacientes
+    }
+
+    private fun agregarPaciente() {
+        if (!validarCampos()) {
+            Toast.makeText(this, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
+            return
         }
 
         CoroutineScope(Dispatchers.IO).launch {
-            val pacientesDB = obtenerPacientes()
-            withContext(Dispatchers.Main) {
-                val adaptador = Adaptador(pacientesDB)
-                rcvPacientes.adapter = adaptador
-            }
-        }
-
-        btnAgregar.setOnClickListener {
-
-            CoroutineScope(Dispatchers.IO).launch {
-
-                val objConexion = claseConexion().cadenaConexion()
-
-                val insertarPacientes =
-                    objConexion?.prepareStatement("INSERT INTO paciente (UUID_paciente, nombre, apellidos, edad, enfermedad, numero_habitacion, numero_cama) VALUES (?, ?, ?, ?, ?, ?, ?)")!!
-
-                insertarPacientes.setString(1,UUID.randomUUID().toString())
-                insertarPacientes.setString(2, txtnombrePaciente.text.toString())
-                insertarPacientes.setString(3, txtapellidoPaciente.text.toString())
-                insertarPacientes.setInt(4, txtEdad.text.toString().toInt())
-                insertarPacientes.setString(5, txtEnfermedad.text.toString())
-                insertarPacientes.setInt(6, txtnumeroHabitacion.text.toString().toInt())
-                insertarPacientes.setInt(7, txtnumeroCama.text.toString().toInt())
-                insertarPacientes.executeUpdate()
-
-                CoroutineScope(Dispatchers.Main).launch {
+            try {
+                insertarPaciente()
+                withContext(Dispatchers.Main) {
                     Toast.makeText(this@paientes, "Paciente agregado", Toast.LENGTH_SHORT).show()
-                    txtnombrePaciente.setText("")
-                    txtapellidoPaciente.setText("")
-                    txtEdad.setText("")
-                    txtEnfermedad.setText("")
-                    txtnumeroHabitacion.setText("")
-                    txtnumeroCama.setText("")
+                    limpiarCampos()
+                    loadPacientes()
                 }
-
+            } catch (e: SQLException) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@paientes, "Error al agregar paciente: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
-
         }
+    }
 
-        imgRegresar.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
+    private fun validarCampos(): Boolean {
+        return txtnombrePaciente.text.isNotBlank() &&
+                txtapellidoPaciente.text.isNotBlank() &&
+                txtEdad.text.isNotBlank() &&
+                txtEnfermedad.text.isNotBlank() &&
+                txtnumeroHabitacion.text.isNotBlank() &&
+                txtnumeroCama.text.isNotBlank()
+    }
+
+    private fun insertarPaciente() {
+        var connection: Connection? = null
+        try {
+            connection = claseConexion().cadenaConexion()
+            connection?.prepareStatement(
+                "INSERT INTO paciente (UUID_paciente, nombre, apellidos, edad, enfermedad, numero_habitacion, numero_cama) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            )?.use { statement ->
+                statement.setString(1, UUID.randomUUID().toString())
+                statement.setString(2, txtnombrePaciente.text.toString())
+                statement.setString(3, txtapellidoPaciente.text.toString())
+                statement.setInt(4, txtEdad.text.toString().toInt())
+                statement.setString(5, txtEnfermedad.text.toString())
+                statement.setInt(6, txtnumeroHabitacion.text.toString().toInt())
+                statement.setInt(7, txtnumeroCama.text.toString().toInt())
+                statement.executeUpdate()
+            }
+        } catch (e: SQLException) {
+            e.printStackTrace()
+            throw e
+        } finally {
+            connection?.close()
         }
+    }
 
+    private fun limpiarCampos() {
+        txtnombrePaciente.text.clear()
+        txtapellidoPaciente.text.clear()
+        txtEdad.text.clear()
+        txtEnfermedad.text.clear()
+        txtnumeroHabitacion.text.clear()
+        txtnumeroCama.text.clear()
     }
 }

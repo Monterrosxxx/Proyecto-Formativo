@@ -2,7 +2,7 @@ package Modelo
 
 data class paciente(
     val uuidPaciente: String,
-    val nombre: String,
+    var nombre: String,
     val apellidos: String,
     val edad: Int,
     val enfermedad: String,

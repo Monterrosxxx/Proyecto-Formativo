@@ -8,8 +8,8 @@ class claseConexion {
     fun cadenaConexion(): Connection?{
         try {
             val ip = "jdbc:oracle:thin:@192.168.0.8:1521:xe"
-            val usuario = "BLOOMHELPER_DEVELOPER"
-            val contrasena = "proyectoFormativo"
+            val usuario = "PFBLOOM_DEVELOPER"
+            val contrasena = "monterrosa"
 
             val conexion = DriverManager.getConnection(ip, usuario, contrasena)
             return conexion
